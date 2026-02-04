@@ -7,7 +7,7 @@ import {
   Users,
   Calendar,
   FileText,
-  Settings,
+  User,
   LogOut,
   Activity,
 } from 'lucide-react';
@@ -79,9 +79,9 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" className="flex-1" asChild>
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                Ajustes
+              <Link href="/profile">
+                <User className="h-4 w-4" />
+                Mi perfil
               </Link>
             </Button>
             <form action={signOut}>

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getClinicalNoteById } from '@/actions/clinical-notes';
 import { getPatientById } from '@/actions/patients';
+import { getCurrentTherapist } from '@/actions/auth';
+import { ExportNotePDFButton } from '@/components/pdf/export-pdf-button';
 import {
   formatDate,
   formatProgressStatus,
@@ -19,9 +21,10 @@ export default async function ClinicalNoteDetailPage({
 }) {
   const { id, noteId } = await params;
 
-  const [noteResult, patientResult] = await Promise.all([
+  const [noteResult, patientResult, therapist] = await Promise.all([
     getClinicalNoteById(noteId),
     getPatientById(id),
+    getCurrentTherapist(),
   ]);
 
   if (!noteResult.success || !noteResult.data || !patientResult.success) {
@@ -49,6 +52,13 @@ export default async function ClinicalNoteDetailPage({
           </div>
         </div>
         <div className="flex gap-2">
+          {therapist && patient && (
+            <ExportNotePDFButton
+              note={note}
+              patient={patient}
+              therapist={therapist}
+            />
+          )}
           <Button variant="outline" asChild>
             <Link href={`/patients/${id}/notes/${noteId}/edit`}>
               <Edit className="h-4 w-4" />

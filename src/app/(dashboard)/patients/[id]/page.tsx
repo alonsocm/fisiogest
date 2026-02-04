@@ -24,6 +24,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getPatientById } from '@/actions/patients';
 import { getPatientClinicalNotes } from '@/actions/clinical-notes';
+import { getCurrentTherapist } from '@/actions/auth';
+import { PainEvolutionChart } from '@/components/patients/pain-evolution-chart';
+import { ExportHistoryPDFButton } from '@/components/pdf/export-pdf-button';
 import {
   formatDate,
   formatPhone,
@@ -41,9 +44,10 @@ export default async function PatientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [patientResult, clinicalNotes] = await Promise.all([
+  const [patientResult, clinicalNotes, therapist] = await Promise.all([
     getPatientById(id),
     getPatientClinicalNotes(id),
+    getCurrentTherapist(),
   ]);
 
   if (!patientResult.success || !patientResult.data) {
@@ -90,6 +94,13 @@ export default async function PatientDetailPage({
           </div>
         </div>
         <div className="flex gap-2">
+          {therapist && (
+            <ExportHistoryPDFButton
+              patient={patient}
+              clinicalNotes={clinicalNotes}
+              therapist={therapist}
+            />
+          )}
           <Button variant="outline" asChild>
             <Link href={`/patients/${id}/edit`}>
               <Edit className="h-4 w-4" />
@@ -104,6 +115,11 @@ export default async function PatientDetailPage({
           </Button>
         </div>
       </div>
+
+      {/* Gráfica de evolución del dolor */}
+      {clinicalNotes.length > 0 && (
+        <PainEvolutionChart clinicalNotes={clinicalNotes} />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Columna izquierda - Información del paciente */}

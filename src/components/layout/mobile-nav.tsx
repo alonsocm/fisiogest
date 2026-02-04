@@ -10,7 +10,7 @@ import {
   Users,
   Calendar,
   FileText,
-  Settings,
+  User,
   LogOut,
   Activity,
 } from 'lucide-react';
@@ -100,9 +100,9 @@ export function MobileNav({ user }: MobileNavProps) {
                 asChild
                 onClick={() => setIsOpen(false)}
               >
-                <Link href="/settings">
-                  <Settings className="h-4 w-4" />
-                  Ajustes
+                <Link href="/profile">
+                  <User className="h-4 w-4" />
+                  Mi perfil
                 </Link>
               </Button>
               <form action={signOut}>
