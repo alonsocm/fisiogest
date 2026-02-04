@@ -10,8 +10,8 @@ import type {
   TodayAppointment
 } from '@/types/database.types';
 
-// Obtener citas del día actual (fecha pasada como parámetro para manejar zonas horarias)
-export async function getTodayAppointments(dateStr?: string): Promise<TodayAppointment[]> {
+// Obtener citas del día actual (recibe timestamps de inicio y fin)
+export async function getTodayAppointments(startISO?: string, endISO?: string): Promise<TodayAppointment[]> {
   const supabase = await createClient();
 
   const {
@@ -20,8 +20,10 @@ export async function getTodayAppointments(dateStr?: string): Promise<TodayAppoi
 
   if (!user) return [];
 
-  // Si no se pasa fecha, usar la fecha actual del servidor
-  const today = dateStr || new Date().toISOString().split('T')[0];
+  // Si no se pasan fechas, usar el día actual en UTC
+  const now = new Date();
+  const startOfDay = startISO || new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+  const endOfDay = endISO || new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
 
   const { data, error } = await supabase
     .from('appointments')
@@ -39,8 +41,8 @@ export async function getTodayAppointments(dateStr?: string): Promise<TodayAppoi
       patients!inner(full_name, phone)
     `)
     .eq('therapist_id', user.id)
-    .gte('start_time', `${today}T00:00:00.000Z`)
-    .lte('start_time', `${today}T23:59:59.999Z`)
+    .gte('start_time', startOfDay)
+    .lte('start_time', endOfDay)
     .not('status', 'in', '("cancelled","no_show")')
     .order('start_time');
 

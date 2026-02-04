@@ -16,11 +16,12 @@ export function TodayAppointmentsStats() {
 
   useEffect(() => {
     async function load() {
-      // Obtener fecha local del usuario en formato YYYY-MM-DD
-      const today = new Date();
-      const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      // Obtener inicio y fin del día en la zona horaria local del usuario
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-      const data = await getTodayAppointments(localDate);
+      const data = await getTodayAppointments(startOfDay.toISOString(), endOfDay.toISOString());
       setAppointments(data);
       setIsLoading(false);
     }
@@ -95,10 +96,11 @@ export function TodayAppointmentsList() {
 
   useEffect(() => {
     async function load() {
-      const today = new Date();
-      const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-      const data = await getTodayAppointments(localDate);
+      const data = await getTodayAppointments(startOfDay.toISOString(), endOfDay.toISOString());
       setAppointments(data);
       setIsLoading(false);
     }
