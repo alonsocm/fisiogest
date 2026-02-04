@@ -1,0 +1,169 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Calendar, TrendingUp, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { getTodayAppointments } from '@/actions/appointments';
+import type { TodayAppointment } from '@/types/database.types';
+import { formatTime, formatAppointmentStatus } from '@/lib/utils';
+
+export function TodayAppointmentsStats() {
+  const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      // Obtener fecha local del usuario en formato YYYY-MM-DD
+      const today = new Date();
+      const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const data = await getTodayAppointments(localDate);
+      setAppointments(data);
+      setIsLoading(false);
+    }
+    load();
+  }, []);
+
+  const completedCount = appointments.filter((a) => a.status === 'completed').length;
+  const nextAppointment = appointments.find((a) => a.status !== 'completed');
+
+  if (isLoading) {
+    return (
+      <>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">--:--</div>
+            <p className="text-xs text-muted-foreground">Cargando...</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completadas</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">-</div>
+            <p className="text-xs text-muted-foreground">hoy</p>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {nextAppointment ? formatTime(nextAppointment.start_time) : '--:--'}
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {nextAppointment ? nextAppointment.patient_name : 'Sin citas pendientes'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Completadas</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{completedCount}</div>
+          <p className="text-xs text-muted-foreground">hoy</p>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export function TodayAppointmentsList() {
+  const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const today = new Date();
+      const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const data = await getTodayAppointments(localDate);
+      setAppointments(data);
+      setIsLoading(false);
+    }
+    load();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Cargando citas...</p>
+      </div>
+    );
+  }
+
+  if (appointments.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <p className="text-muted-foreground">
+          No tienes citas programadas para hoy
+        </p>
+        <Button variant="link" asChild>
+          <Link href="/calendar">Agendar una cita</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {appointments.map((appointment) => (
+        <div
+          key={appointment.id}
+          className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+        >
+          <div className="text-center min-w-[60px]">
+            <p className="text-lg font-semibold">
+              {formatTime(appointment.start_time)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {appointment.duration_minutes} min
+            </p>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{appointment.patient_name}</p>
+            <p className="text-sm text-muted-foreground truncate">
+              {appointment.title}
+            </p>
+          </div>
+          <Badge
+            variant={
+              appointment.status === 'completed'
+                ? 'secondary'
+                : appointment.status === 'in_progress'
+                  ? 'default'
+                  : 'outline'
+            }
+          >
+            {formatAppointmentStatus(appointment.status)}
+          </Badge>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/patients/${appointment.patient_id}`}>Ver</Link>
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}

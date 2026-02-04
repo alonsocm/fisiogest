@@ -10,8 +10,8 @@ import type {
   TodayAppointment
 } from '@/types/database.types';
 
-// Obtener citas del día actual
-export async function getTodayAppointments(): Promise<TodayAppointment[]> {
+// Obtener citas del día actual (fecha pasada como parámetro para manejar zonas horarias)
+export async function getTodayAppointments(dateStr?: string): Promise<TodayAppointment[]> {
   const supabase = await createClient();
 
   const {
@@ -20,9 +20,8 @@ export async function getTodayAppointments(): Promise<TodayAppointment[]> {
 
   if (!user) return [];
 
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+  // Si no se pasa fecha, usar la fecha actual del servidor
+  const today = dateStr || new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('appointments')
@@ -40,8 +39,8 @@ export async function getTodayAppointments(): Promise<TodayAppointment[]> {
       patients!inner(full_name, phone)
     `)
     .eq('therapist_id', user.id)
-    .gte('start_time', startOfDay)
-    .lte('start_time', endOfDay)
+    .gte('start_time', `${today}T00:00:00.000Z`)
+    .lte('start_time', `${today}T23:59:59.999Z`)
     .not('status', 'in', '("cancelled","no_show")')
     .order('start_time');
 
