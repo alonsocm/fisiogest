@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { signIn } from '@/actions/auth';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,12 +28,14 @@ export default function LoginPage() {
 
     try {
       const result = await signIn(formData);
-      if (!result.success) {
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
         setError(result.error || 'Error al iniciar sesión');
+        setIsLoading(false);
       }
     } catch {
       setError('Error inesperado. Por favor intenta de nuevo.');
-    } finally {
       setIsLoading(false);
     }
   };

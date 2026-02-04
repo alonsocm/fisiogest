@@ -48,7 +48,7 @@ export async function signIn(formData: FormData): Promise<ApiResponse<null>> {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/dashboard');
+  return { data: null, error: null, success: true };
 }
 
 // Logout
