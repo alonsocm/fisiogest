@@ -140,9 +140,9 @@ export function ClinicalNoteForm({
               <Input
                 id="session_duration"
                 type="number"
-                min="15"
-                max="180"
-                step="15"
+                min="5"
+                max="240"
+                step="5"
                 value={formData.session_duration_minutes}
                 onChange={(e) =>
                   handleChange('session_duration_minutes', parseInt(e.target.value))
