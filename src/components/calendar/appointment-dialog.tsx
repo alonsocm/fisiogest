@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -169,7 +168,7 @@ export function AppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Editar Cita' : 'Nueva Cita'}
@@ -181,7 +180,7 @@ export function AppointmentDialog({
           )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pb-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
               {error}
@@ -286,7 +285,7 @@ export function AppointmentDialog({
             />
           </div>
 
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4 border-t mt-4 sticky bottom-0 bg-background">
             {isEditing && canModify && (
               <>
                 <Button
@@ -294,6 +293,7 @@ export function AppointmentDialog({
                   variant="destructive"
                   onClick={handleCancel}
                   disabled={isPending}
+                  className="flex-1 sm:flex-none"
                 >
                   <X className="h-4 w-4" />
                   Cancelar cita
@@ -303,13 +303,14 @@ export function AppointmentDialog({
                   variant="outline"
                   onClick={handleComplete}
                   disabled={isPending}
+                  className="flex-1 sm:flex-none"
                 >
                   <Check className="h-4 w-4" />
                   Completar
                 </Button>
               </>
             )}
-            <Button type="submit" disabled={isPending || !canModify}>
+            <Button type="submit" disabled={isPending || !canModify} className="flex-1 sm:flex-none">
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -321,7 +322,7 @@ export function AppointmentDialog({
                 'Crear cita'
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
