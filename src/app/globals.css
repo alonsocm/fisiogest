@@ -53,6 +53,11 @@
   * {
     @apply border-border;
   }
+
+  :root {
+    color-scheme: light;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
