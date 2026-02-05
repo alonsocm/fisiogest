@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Trash2, Check, X } from 'lucide-react';
-import type { Appointment, AppointmentType, Patient } from '@/types/database.types';
+import Link from 'next/link';
+import { Loader2, Trash2, Check, X, FileText, ExternalLink } from 'lucide-react';
+import type { Appointment, AppointmentType, Patient, ClinicalNote } from '@/types/database.types';
 import {
   createAppointment,
   updateAppointment,
@@ -28,7 +29,8 @@ import {
   completeAppointment,
 } from '@/actions/appointments';
 import { getActivePatients } from '@/actions/patients';
-import { formatDateTime } from '@/lib/utils';
+import { getClinicalNoteByAppointmentId } from '@/actions/clinical-notes';
+import { formatDateTime, formatDate } from '@/lib/utils';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -46,6 +48,8 @@ export function AppointmentDialog({
   const [isPending, startTransition] = useTransition();
   const [patients, setPatients] = useState<Pick<Patient, 'id' | 'full_name' | 'phone'>[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [linkedNote, setLinkedNote] = useState<ClinicalNote | null>(null);
+  const [loadingNote, setLoadingNote] = useState(false);
 
   const [formData, setFormData] = useState({
     patient_id: '',
@@ -61,6 +65,8 @@ export function AppointmentDialog({
   useEffect(() => {
     if (open) {
       loadPatients();
+      setLinkedNote(null);
+      setLoadingNote(false);
       if (appointment) {
         const startDate = new Date(appointment.start_time);
         const endDate = new Date(appointment.end_time);
@@ -74,6 +80,15 @@ export function AppointmentDialog({
           appointment_type: appointment.appointment_type,
           notes: appointment.notes || '',
         });
+
+        // Fetch linked clinical note for completed appointments
+        if (appointment.status === 'completed') {
+          setLoadingNote(true);
+          getClinicalNoteByAppointmentId(appointment.id).then((note) => {
+            setLinkedNote(note);
+            setLoadingNote(false);
+          });
+        }
       } else {
         const date = defaultDate || new Date();
         setFormData({
@@ -284,6 +299,45 @@ export function AppointmentDialog({
               disabled={!canModify}
             />
           </div>
+
+          {/* Linked clinical note section */}
+          {isEditing && appointment?.status === 'completed' && (
+            <div className="p-3 rounded-md border bg-muted/30 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FileText className="h-4 w-4" />
+                Nota Clínica
+              </div>
+              {loadingNote ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Cargando...
+                </div>
+              ) : linkedNote ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Nota del {formatDate(linkedNote.session_date)}
+                  </p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/patients/${appointment.patient_id}/notes/${linkedNote.id}`}>
+                      Ver nota
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Sin nota clínica vinculada
+                  </p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/patients/${appointment.patient_id}/notes/new?appointmentId=${appointment.id}`}>
+                      Crear nota
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4 border-t mt-4 sticky bottom-0 bg-background">
             {isEditing && canModify && (

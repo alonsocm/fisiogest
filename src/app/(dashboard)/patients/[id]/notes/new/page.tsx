@@ -7,10 +7,13 @@ import { getPatientById } from '@/actions/patients';
 
 export default async function NewClinicalNotePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ appointmentId?: string }>;
 }) {
   const { id } = await params;
+  const { appointmentId } = await searchParams;
   const patientResult = await getPatientById(id);
 
   if (!patientResult.success || !patientResult.data) {
@@ -35,7 +38,7 @@ export default async function NewClinicalNotePage({
         </div>
       </div>
 
-      <ClinicalNoteForm patientId={id} patient={patient} />
+      <ClinicalNoteForm patientId={id} patient={patient} appointmentId={appointmentId} />
     </div>
   );
 }

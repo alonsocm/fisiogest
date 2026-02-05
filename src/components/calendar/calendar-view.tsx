@@ -1,30 +1,32 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
   Clock,
   User,
-  MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import type { Appointment, AppointmentStatus } from '@/types/database.types';
+import type { Appointment } from '@/types/database.types';
 import {
   formatTime,
   formatAppointmentStatus,
   formatAppointmentType,
 } from '@/lib/utils';
+import {
+  DAYS,
+  DAYS_FULL,
+  MONTHS,
+  getStatusColor,
+  getWeekDates,
+  isSameDay,
+} from './calendar-helpers';
+import { CalendarWeekView } from './calendar-week-view';
+import { CalendarDayView } from './calendar-day-view';
 
 interface CalendarViewProps {
   appointments: Appointment[];
@@ -32,12 +34,6 @@ interface CalendarViewProps {
   onAppointmentClick?: (appointment: Appointment) => void;
   onNewAppointment?: (date: Date) => void;
 }
-
-const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
 
 export function CalendarView({
   appointments,
@@ -49,7 +45,14 @@ export function CalendarView({
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
 
-  // Obtener primer día del mes y total de días
+  // Sync selectedDate with currentDate in day view
+  useEffect(() => {
+    if (view === 'day') {
+      setSelectedDate(new Date(currentDate));
+    }
+  }, [view, currentDate]);
+
+  // Month view calculations
   const firstDayOfMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth(),
@@ -63,7 +66,7 @@ export function CalendarView({
   const daysInMonth = lastDayOfMonth.getDate();
   const startingDay = firstDayOfMonth.getDay();
 
-  // Agrupar citas por fecha
+  // Group appointments by date
   const appointmentsByDate = useMemo(() => {
     const grouped: Record<string, Appointment[]> = {};
     appointments.forEach((apt) => {
@@ -76,7 +79,7 @@ export function CalendarView({
     return grouped;
   }, [appointments]);
 
-  // Citas del día seleccionado
+  // Selected date appointments (for sidebar)
   const selectedDateAppointments = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = selectedDate.toDateString();
@@ -85,16 +88,42 @@ export function CalendarView({
     );
   }, [selectedDate, appointmentsByDate]);
 
-  const handlePrevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
+  // View-aware navigation
+  const handlePrev = () => {
+    if (view === 'month') {
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      );
+    } else if (view === 'week') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 7);
+      setCurrentDate(d);
+    } else {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      setCurrentDate(d);
+    }
   };
 
-  const handleNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
+  const handleNext = () => {
+    if (view === 'month') {
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      );
+    } else if (view === 'week') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 7);
+      setCurrentDate(d);
+    } else {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 1);
+      setCurrentDate(d);
+    }
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+    setSelectedDate(new Date());
   };
 
   const handleDateClick = (day: number) => {
@@ -107,7 +136,26 @@ export function CalendarView({
     onDateSelect?.(date);
   };
 
-  const isToday = (day: number) => {
+  // View-aware header title
+  const getHeaderTitle = () => {
+    if (view === 'month') {
+      return `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+    if (view === 'week') {
+      const weekDates = getWeekDates(currentDate);
+      const start = weekDates[0];
+      const end = weekDates[6];
+      if (start.getMonth() === end.getMonth()) {
+        return `${start.getDate()} - ${end.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`;
+      }
+      return `${start.getDate()} ${MONTHS[start.getMonth()].slice(0, 3)} - ${end.getDate()} ${MONTHS[end.getMonth()].slice(0, 3)} ${end.getFullYear()}`;
+    }
+    // day
+    return `${DAYS_FULL[currentDate.getDay()]} ${currentDate.getDate()} de ${MONTHS[currentDate.getMonth()]}, ${currentDate.getFullYear()}`;
+  };
+
+  // Month view helpers
+  const isTodayDay = (day: number) => {
     const today = new Date();
     return (
       day === today.getDate() &&
@@ -116,7 +164,7 @@ export function CalendarView({
     );
   };
 
-  const isSelected = (day: number) => {
+  const isSelectedDay = (day: number) => {
     if (!selectedDate) return false;
     return (
       day === selectedDate.getDate() &&
@@ -143,118 +191,152 @@ export function CalendarView({
     return appointmentsByDate[date.toDateString()]?.length || 0;
   };
 
-  const getStatusColor = (status: AppointmentStatus) => {
-    switch (status) {
-      case 'scheduled':
-        return 'bg-blue-500';
-      case 'confirmed':
-        return 'bg-green-500';
-      case 'in_progress':
-        return 'bg-yellow-500';
-      case 'completed':
-        return 'bg-gray-500';
-      case 'cancelled':
-        return 'bg-red-500';
-      case 'no_show':
-        return 'bg-orange-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  // Generar días del calendario
+  // Generate calendar days for month view
   const calendarDays = [];
-  // Días vacíos antes del primer día del mes
   for (let i = 0; i < startingDay; i++) {
     calendarDays.push(null);
   }
-  // Días del mes
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
   }
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
-      {/* Calendario */}
+      {/* Calendar */}
       <Card className="flex-1">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
-              {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setCurrentDate(new Date());
-                  setSelectedDate(new Date());
-                }}
-              >
-                Hoy
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-lg">{getHeaderTitle()}</CardTitle>
+            <div className="flex items-center gap-2">
+              {/* View toggle */}
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={view === 'month' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-r-none h-8 px-3"
+                  onClick={() => setView('month')}
+                >
+                  Mes
+                </Button>
+                <Button
+                  variant={view === 'week' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-none border-x h-8 px-3"
+                  onClick={() => setView('week')}
+                >
+                  Semana
+                </Button>
+                <Button
+                  variant={view === 'day' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-l-none h-8 px-3"
+                  onClick={() => setView('day')}
+                >
+                  Día
+                </Button>
+              </div>
+              {/* Navigation */}
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={handlePrev}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleToday}>
+                  Hoy
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleNext}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Cabecera de días */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {DAYS.map((day) => (
-              <div
-                key={day}
-                className="text-center text-sm font-medium text-muted-foreground py-2"
-              >
-                {day}
+          {/* Month view */}
+          {view === 'month' && (
+            <>
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {DAYS.map((day) => (
+                  <div
+                    key={day}
+                    className="text-center text-sm font-medium text-muted-foreground py-2"
+                  >
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          {/* Días del calendario */}
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day, index) => (
-              <button
-                key={index}
-                disabled={day === null}
-                onClick={() => day && handleDateClick(day)}
-                className={`
-                  relative aspect-square p-1 text-sm rounded-md transition-colors
-                  ${day === null ? 'invisible' : 'hover:bg-muted'}
-                  ${isToday(day!) ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
-                  ${isSelected(day!) && !isToday(day!) ? 'bg-muted ring-2 ring-primary' : ''}
-                `}
-              >
-                <span className="absolute top-1 left-1/2 -translate-x-1/2">
-                  {day}
-                </span>
-                {day && hasAppointments(day) && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    {getAppointmentCount(day) <= 3 ? (
-                      Array.from({ length: getAppointmentCount(day) }).map((_, i) => (
-                        <span
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full bg-primary"
-                        />
-                      ))
-                    ) : (
-                      <span className="text-[10px] font-medium text-primary">
-                        {getAppointmentCount(day)}
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((day, index) => (
+                  <button
+                    key={index}
+                    disabled={day === null}
+                    onClick={() => day && handleDateClick(day)}
+                    className={`
+                      relative aspect-square p-1 text-sm rounded-md transition-colors
+                      ${day === null ? 'invisible' : 'hover:bg-muted'}
+                      ${isTodayDay(day!) ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
+                      ${isSelectedDay(day!) && !isTodayDay(day!) ? 'bg-muted ring-2 ring-primary' : ''}
+                    `}
+                  >
+                    <span className="absolute top-1 left-1/2 -translate-x-1/2">
+                      {day}
+                    </span>
+                    {day && hasAppointments(day) && (
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                        {getAppointmentCount(day) <= 3 ? (
+                          Array.from({ length: getAppointmentCount(day) }).map((_, i) => (
+                            <span
+                              key={i}
+                              className="w-1.5 h-1.5 rounded-full bg-primary"
+                            />
+                          ))
+                        ) : (
+                          <span className="text-[10px] font-medium text-primary">
+                            {getAppointmentCount(day)}
+                          </span>
+                        )}
                       </span>
                     )}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Week view */}
+          {view === 'week' && (
+            <CalendarWeekView
+              appointments={appointments}
+              appointmentsByDate={appointmentsByDate}
+              currentDate={currentDate}
+              selectedDate={selectedDate}
+              onDateSelect={(date) => {
+                setSelectedDate(date);
+                onDateSelect?.(date);
+              }}
+              onAppointmentClick={(apt) => onAppointmentClick?.(apt)}
+              onNewAppointment={(date) => onNewAppointment?.(date)}
+            />
+          )}
+
+          {/* Day view */}
+          {view === 'day' && (
+            <CalendarDayView
+              appointments={appointments}
+              appointmentsByDate={appointmentsByDate}
+              currentDate={currentDate}
+              selectedDate={selectedDate}
+              onDateSelect={(date) => {
+                setSelectedDate(date);
+                onDateSelect?.(date);
+              }}
+              onAppointmentClick={(apt) => onAppointmentClick?.(apt)}
+              onNewAppointment={(date) => onNewAppointment?.(date)}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Panel de citas del día */}
+      {/* Sidebar - Selected day appointments */}
       <Card className="lg:w-80">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">

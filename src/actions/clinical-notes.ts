@@ -44,6 +44,26 @@ export async function getClinicalNoteById(id: string): Promise<ApiResponse<Clini
   return { data, error: null, success: true };
 }
 
+// Obtener nota clínica por appointment_id
+export async function getClinicalNoteByAppointmentId(
+  appointmentId: string
+): Promise<ClinicalNote | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('clinical_notes')
+    .select('*')
+    .eq('appointment_id', appointmentId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching clinical note by appointment:', error);
+    return null;
+  }
+
+  return data;
+}
+
 // Crear nueva nota clínica
 export async function createClinicalNote(
   noteData: Omit<ClinicalNoteInsert, 'therapist_id'>
