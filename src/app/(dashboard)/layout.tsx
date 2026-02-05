@@ -30,12 +30,12 @@ export default async function DashboardLayout({
       <Sidebar user={therapist || { full_name: user.email || '', email: user.email || '' }} />
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col lg:pl-64">
+      <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
         {/* Navegación móvil */}
         <MobileNav user={therapist || { full_name: user.email || '', email: user.email || '' }} />
 
         {/* Contenido de la página */}
-        <main className="flex-1 p-4 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
