@@ -37,7 +37,7 @@ export function TodayAppointmentsStats() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 shrink-0 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">--:--</div>
@@ -48,7 +48,7 @@ export function TodayAppointmentsStats() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completadas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 shrink-0 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">-</div>
@@ -64,7 +64,7 @@ export function TodayAppointmentsStats() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="h-4 w-4 shrink-0 text-orange-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
@@ -79,7 +79,7 @@ export function TodayAppointmentsStats() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Completadas</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <TrendingUp className="h-4 w-4 shrink-0 text-purple-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{completedCount}</div>
@@ -134,36 +134,40 @@ export function TodayAppointmentsList() {
       {appointments.map((appointment) => (
         <div
           key={appointment.id}
-          className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+          className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
         >
-          <div className="text-center min-w-[60px]">
-            <p className="text-lg font-semibold">
-              {formatTime(appointment.start_time)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {appointment.duration_minutes} min
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="text-center shrink-0">
+              <p className="text-lg font-semibold">
+                {formatTime(appointment.start_time)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {appointment.duration_minutes} min
+              </p>
+            </div>
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="font-medium break-words">{appointment.patient_name}</p>
+              <p className="text-sm text-muted-foreground break-words">
+                {appointment.title}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge
+                  variant={
+                    appointment.status === 'completed'
+                      ? 'secondary'
+                      : appointment.status === 'in_progress'
+                        ? 'default'
+                        : 'outline'
+                  }
+                >
+                  {formatAppointmentStatus(appointment.status)}
+                </Badge>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/patients/${appointment.patient_id}`}>Ver</Link>
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{appointment.patient_name}</p>
-            <p className="text-sm text-muted-foreground truncate">
-              {appointment.title}
-            </p>
-          </div>
-          <Badge
-            variant={
-              appointment.status === 'completed'
-                ? 'secondary'
-                : appointment.status === 'in_progress'
-                  ? 'default'
-                  : 'outline'
-            }
-          >
-            {formatAppointmentStatus(appointment.status)}
-          </Badge>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/patients/${appointment.patient_id}`}>Ver</Link>
-          </Button>
         </div>
       ))}
     </div>
