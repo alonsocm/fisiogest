@@ -22,6 +22,7 @@ export interface Therapist {
   clinic_address: string | null;
   specialty: string;
   avatar_url: string | null;
+  default_session_price: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +37,7 @@ export interface TherapistInsert {
   clinic_address?: string | null;
   specialty?: string;
   avatar_url?: string | null;
+  default_session_price?: number | null;
 }
 
 export interface TherapistUpdate {
@@ -47,6 +49,7 @@ export interface TherapistUpdate {
   clinic_address?: string | null;
   specialty?: string;
   avatar_url?: string | null;
+  default_session_price?: number | null;
 }
 
 // =============================================
@@ -140,6 +143,7 @@ export interface Appointment {
   appointment_type: AppointmentType;
   reminder_sent: boolean;
   notes: string | null;
+  price: number | null;
   created_at: string;
   updated_at: string;
   // Relaciones opcionales
@@ -156,6 +160,7 @@ export interface AppointmentInsert {
   status?: AppointmentStatus;
   appointment_type?: AppointmentType;
   notes?: string | null;
+  price?: number | null;
 }
 
 export interface AppointmentUpdate {
@@ -168,6 +173,7 @@ export interface AppointmentUpdate {
   appointment_type?: AppointmentType;
   reminder_sent?: boolean;
   notes?: string | null;
+  price?: number | null;
 }
 
 // =============================================
@@ -318,6 +324,7 @@ export interface AppointmentFormData {
   end_time: string;
   appointment_type: AppointmentType;
   notes: string;
+  price: string;
 }
 
 // =============================================
@@ -335,4 +342,60 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+// =============================================
+// Payment (Pago)
+// =============================================
+export type PaymentType = 'charge' | 'payment';
+export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'other';
+
+export interface Payment {
+  id: string;
+  therapist_id: string;
+  patient_id: string;
+  appointment_id: string | null;
+  amount: number;
+  type: PaymentType;
+  payment_method: PaymentMethod | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  // Relaciones opcionales
+  patient?: Patient;
+  appointment?: Appointment;
+}
+
+export interface PaymentInsert {
+  therapist_id: string;
+  patient_id: string;
+  appointment_id?: string | null;
+  amount: number;
+  type: PaymentType;
+  payment_method?: PaymentMethod | null;
+  description?: string | null;
+}
+
+export interface PaymentUpdate {
+  amount?: number;
+  type?: PaymentType;
+  payment_method?: PaymentMethod | null;
+  description?: string | null;
+}
+
+export interface PatientBalance {
+  patient_id: string;
+  therapist_id: string;
+  full_name: string;
+  phone: string;
+  total_charges: number;
+  total_payments: number;
+  balance: number;
+}
+
+export interface FinancialStats {
+  totalIncome: number;
+  monthlyIncome: number;
+  pendingBalance: number;
+  patientsWithBalance: number;
 }

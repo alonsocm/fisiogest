@@ -174,3 +174,31 @@ export function isValidPhone(phone: string): boolean {
   const cleaned = phone.replace(/\D/g, '');
   return cleaned.length === 10;
 }
+
+// Formatear tipo de pago
+export function formatPaymentType(type: string): string {
+  const typeMap: Record<string, string> = {
+    charge: 'Cargo',
+    payment: 'Pago',
+  };
+  return typeMap[type] || type;
+}
+
+// Formatear método de pago
+export function formatPaymentMethod(method: string): string {
+  const methodMap: Record<string, string> = {
+    cash: 'Efectivo',
+    card: 'Tarjeta',
+    transfer: 'Transferencia',
+    other: 'Otro',
+  };
+  return methodMap[method] || method;
+}
+
+// Formatear moneda
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  }).format(amount);
+}

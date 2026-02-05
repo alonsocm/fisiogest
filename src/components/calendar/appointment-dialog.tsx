@@ -60,6 +60,7 @@ export function AppointmentDialog({
     end_time: '',
     appointment_type: 'session' as AppointmentType,
     notes: '',
+    price: '',
   });
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export function AppointmentDialog({
           end_time: endDate.toTimeString().slice(0, 5),
           appointment_type: appointment.appointment_type,
           notes: appointment.notes || '',
+          price: appointment.price?.toString() || '',
         });
 
         // Fetch linked clinical note for completed appointments
@@ -100,6 +102,7 @@ export function AppointmentDialog({
           end_time: '10:00',
           appointment_type: 'session',
           notes: '',
+          price: '',
         });
       }
     }
@@ -141,6 +144,7 @@ export function AppointmentDialog({
         end_time: endTime.toISOString(),
         appointment_type: formData.appointment_type,
         notes: formData.notes || null,
+        price: formData.price ? parseFloat(formData.price) : null,
       };
 
       let result;
@@ -269,23 +273,39 @@ export function AppointmentDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="appointment_type">Tipo de cita</Label>
-            <Select
-              value={formData.appointment_type}
-              onValueChange={(value) => handleChange('appointment_type', value)}
-              disabled={!canModify}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="evaluation">Evaluación</SelectItem>
-                <SelectItem value="session">Sesión</SelectItem>
-                <SelectItem value="follow_up">Seguimiento</SelectItem>
-                <SelectItem value="discharge">Alta</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="appointment_type">Tipo de cita</Label>
+              <Select
+                value={formData.appointment_type}
+                onValueChange={(value) => handleChange('appointment_type', value)}
+                disabled={!canModify}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="evaluation">Evaluación</SelectItem>
+                  <SelectItem value="session">Sesión</SelectItem>
+                  <SelectItem value="follow_up">Seguimiento</SelectItem>
+                  <SelectItem value="discharge">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Precio de la sesión</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => handleChange('price', e.target.value)}
+                placeholder="0.00"
+                disabled={!canModify}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

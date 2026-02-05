@@ -207,6 +207,27 @@ export async function cancelAppointment(id: string): Promise<ApiResponse<null>> 
 export async function completeAppointment(id: string): Promise<ApiResponse<null>> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: null, error: 'No autenticado', success: false };
+  }
+
+  // Obtener la cita con su precio y datos del paciente
+  const { data: appointment, error: fetchError } = await supabase
+    .from('appointments')
+    .select('*, patient:patients(full_name)')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !appointment) {
+    console.error('Error fetching appointment:', fetchError);
+    return { data: null, error: 'Cita no encontrada', success: false };
+  }
+
+  // Actualizar estado de la cita
   const { error } = await supabase
     .from('appointments')
     .update({ status: 'completed' })
@@ -217,7 +238,34 @@ export async function completeAppointment(id: string): Promise<ApiResponse<null>
     return { data: null, error: error.message, success: false };
   }
 
+  // Determinar el precio a cobrar
+  let priceToCharge = appointment.price;
+
+  // Si no hay precio en la cita, usar el precio predeterminado del terapeuta
+  if (!priceToCharge || priceToCharge <= 0) {
+    const { data: therapist } = await supabase
+      .from('therapists')
+      .select('default_session_price')
+      .eq('id', user.id)
+      .single();
+
+    priceToCharge = therapist?.default_session_price || 0;
+  }
+
+  // Crear cargo si el precio es mayor a 0
+  if (priceToCharge && priceToCharge > 0) {
+    const { createCharge } = await import('./payments');
+    const patient = appointment.patient as { full_name: string };
+    await createCharge(
+      appointment.patient_id,
+      id,
+      priceToCharge,
+      `Sesión - ${patient?.full_name || 'Paciente'}`
+    );
+  }
+
   revalidatePath('/calendar');
   revalidatePath('/dashboard');
+  revalidatePath(`/patients/${appointment.patient_id}`);
   return { data: null, error: null, success: true };
 }

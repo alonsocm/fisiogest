@@ -10,6 +10,7 @@ import {
   User,
   LogOut,
   Activity,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Pacientes', href: '/patients', icon: Users },
   { name: 'Agenda', href: '/calendar', icon: Calendar },
   { name: 'Notas Clínicas', href: '/clinical-notes', icon: FileText },
+  { name: 'Finanzas', href: '/financials', icon: DollarSign },
 ];
 
 export function Sidebar({ user }: SidebarProps) {

@@ -19,6 +19,7 @@ import {
   TodayAppointmentsStats,
   TodayAppointmentsList,
 } from '@/components/dashboard/today-appointments';
+import { FinancialStatsCards } from '@/components/payments';
 
 export default async function DashboardPage() {
   const [stats, therapist] = await Promise.all([
@@ -55,11 +56,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Citas Hoy</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-500" />
+            <Calendar className="h-4 w-4 shrink-0 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.todayAppointments}</div>
@@ -74,7 +75,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Pacientes Activos
             </CardTitle>
-            <Users className="h-4 w-4 text-green-500" />
+            <Users className="h-4 w-4 shrink-0 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activePatients}</div>
@@ -85,6 +86,8 @@ export default async function DashboardPage() {
         </Card>
 
         <TodayAppointmentsStats />
+
+        <FinancialStatsCards />
       </div>
 
       {/* Citas del día */}

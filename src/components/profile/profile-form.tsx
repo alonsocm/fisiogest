@@ -28,6 +28,7 @@ export function ProfileForm({ therapist }: ProfileFormProps) {
     license_number: therapist.license_number || '',
     clinic_name: therapist.clinic_name || '',
     clinic_address: therapist.clinic_address || '',
+    default_session_price: therapist.default_session_price?.toString() || '',
   });
 
   const handleChange = (field: keyof typeof formData, value: string) => {
@@ -53,6 +54,9 @@ export function ProfileForm({ therapist }: ProfileFormProps) {
         license_number: formData.license_number.trim() || null,
         clinic_name: formData.clinic_name.trim() || null,
         clinic_address: formData.clinic_address.trim() || null,
+        default_session_price: formData.default_session_price
+          ? parseFloat(formData.default_session_price)
+          : null,
       });
 
       if (!result.success) {
@@ -168,6 +172,22 @@ export function ProfileForm({ therapist }: ProfileFormProps) {
               onChange={(e) => handleChange('clinic_address', e.target.value)}
               placeholder="Calle, número, colonia, ciudad"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="default_session_price">Precio por sesión (predeterminado)</Label>
+            <Input
+              id="default_session_price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.default_session_price}
+              onChange={(e) => handleChange('default_session_price', e.target.value)}
+              placeholder="0.00"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este precio se usará cuando no se especifique uno en la cita
+            </p>
           </div>
         </CardContent>
       </Card>

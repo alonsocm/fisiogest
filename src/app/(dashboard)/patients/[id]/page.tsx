@@ -27,6 +27,7 @@ import { getPatientClinicalNotes } from '@/actions/clinical-notes';
 import { getCurrentTherapist } from '@/actions/auth';
 import { PainEvolutionChart } from '@/components/patients/pain-evolution-chart';
 import { ExportHistoryPDFButton } from '@/components/pdf/export-pdf-button';
+import { PatientBalanceCard, PatientPaymentHistory } from '@/components/payments';
 import {
   formatDate,
   formatPhone,
@@ -258,6 +259,13 @@ export default async function PatientDetailPage({
               </CardContent>
             </Card>
           )}
+
+          {/* Balance y pagos */}
+          <PatientBalanceCard
+            patientId={patient.id}
+            patientName={patient.full_name}
+          />
+          <PatientPaymentHistory patientId={patient.id} />
         </div>
 
         {/* Columna derecha - Notas clínicas */}
