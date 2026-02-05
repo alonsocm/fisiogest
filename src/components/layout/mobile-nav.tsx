@@ -57,8 +57,8 @@ export function MobileNav({ user }: MobileNavProps) {
 
       {/* Menú móvil desplegable */}
       {isOpen && (
-        <div className="lg:hidden fixed inset-0 z-30 bg-background pt-16">
-          <nav className="p-4 space-y-1">
+        <div className="lg:hidden fixed inset-0 z-30 bg-background pt-16 flex flex-col">
+          <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -81,13 +81,13 @@ export function MobileNav({ user }: MobileNavProps) {
           </nav>
 
           {/* Usuario y opciones */}
-          <div className="absolute bottom-0 left-0 right-0 border-t p-4 bg-background">
+          <div className="border-t p-4 pb-24 bg-background">
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+                <AvatarFallback className="text-foreground">{getInitials(user.full_name)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{user.full_name}</p>
+                <p className="font-medium truncate text-foreground">{user.full_name}</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {user.email}
                 </p>
@@ -101,13 +101,13 @@ export function MobileNav({ user }: MobileNavProps) {
                 onClick={() => setIsOpen(false)}
               >
                 <Link href="/profile">
-                  <User className="h-4 w-4" />
+                  <User className="h-4 w-4 text-foreground" />
                   Mi perfil
                 </Link>
               </Button>
               <form action={signOut}>
                 <Button variant="outline" type="submit">
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 text-foreground" />
                   Salir
                 </Button>
               </form>
