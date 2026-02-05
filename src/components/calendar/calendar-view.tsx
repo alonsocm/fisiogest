@@ -205,37 +205,10 @@ export function CalendarView({
       {/* Calendar */}
       <Card className="flex-1">
         <CardHeader className="pb-2">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-lg">{getHeaderTitle()}</CardTitle>
-            <div className="flex items-center gap-2">
-              {/* View toggle */}
-              <div className="flex items-center border rounded-md">
-                <Button
-                  variant={view === 'month' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-r-none h-8 px-3"
-                  onClick={() => setView('month')}
-                >
-                  Mes
-                </Button>
-                <Button
-                  variant={view === 'week' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-none border-x h-8 px-3"
-                  onClick={() => setView('week')}
-                >
-                  Semana
-                </Button>
-                <Button
-                  variant={view === 'day' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="rounded-l-none h-8 px-3"
-                  onClick={() => setView('day')}
-                >
-                  Día
-                </Button>
-              </div>
-              {/* Navigation */}
+          <div className="space-y-3">
+            {/* Title + Navigation row */}
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">{getHeaderTitle()}</CardTitle>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={handlePrev}>
                   <ChevronLeft className="h-4 w-4" />
@@ -247,6 +220,33 @@ export function CalendarView({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+            {/* View toggle row */}
+            <div className="flex items-center border rounded-md w-fit">
+              <Button
+                variant={view === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-r-none h-8 px-3"
+                onClick={() => setView('month')}
+              >
+                Mes
+              </Button>
+              <Button
+                variant={view === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none border-x h-8 px-3"
+                onClick={() => setView('week')}
+              >
+                Semana
+              </Button>
+              <Button
+                variant={view === 'day' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-l-none h-8 px-3"
+                onClick={() => setView('day')}
+              >
+                Día
+              </Button>
             </div>
           </div>
         </CardHeader>
