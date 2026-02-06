@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import {
   Users,
-  Calendar,
   Plus,
   ArrowRight,
   TrendingUp,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +18,7 @@ import { getDashboardStats, getCurrentTherapist } from '@/actions/auth';
 import {
   TodayAppointmentsStats,
   TodayAppointmentsList,
+  TodayAppointmentsCountCard,
 } from '@/components/dashboard/today-appointments';
 import { FinancialStatsCards } from '@/components/payments';
 
@@ -57,18 +58,7 @@ export default async function DashboardPage() {
 
       {/* Estadísticas */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Citas Hoy</CardTitle>
-            <Calendar className="h-4 w-4 shrink-0 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.todayAppointments}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.weekAppointments} esta semana
-            </p>
-          </CardContent>
-        </Card>
+        <TodayAppointmentsCountCard />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

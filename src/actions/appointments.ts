@@ -10,6 +10,32 @@ import type {
   TodayAppointment
 } from '@/types/database.types';
 
+// Contar citas en un rango de fechas
+export async function getWeekAppointmentsCount(startISO: string, endISO: string): Promise<number> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from('appointments')
+    .select('*', { count: 'exact', head: true })
+    .eq('therapist_id', user.id)
+    .gte('start_time', startISO)
+    .lte('start_time', endISO)
+    .not('status', 'in', '("cancelled","no_show")');
+
+  if (error) {
+    console.error('Error counting week appointments:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
 // Obtener citas del día actual (recibe timestamps de inicio y fin)
 export async function getTodayAppointments(startISO?: string, endISO?: string): Promise<TodayAppointment[]> {
   const supabase = await createClient();
