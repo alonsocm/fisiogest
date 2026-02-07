@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Link from 'next/link';
-import { Loader2, Trash2, Check, X, FileText, ExternalLink } from 'lucide-react';
-import type { Appointment, AppointmentType, Patient, ClinicalNote } from '@/types/database.types';
+import { Loader2, Trash2, Check, X, FileText, ExternalLink, AlertTriangle } from 'lucide-react';
+import type { Appointment, AppointmentType, Patient, ClinicalNote, AppointmentConflict } from '@/types/database.types';
 import {
   createAppointment,
   updateAppointment,
@@ -30,7 +30,7 @@ import {
 } from '@/actions/appointments';
 import { getActivePatients } from '@/actions/patients';
 import { getClinicalNoteByAppointmentId } from '@/actions/clinical-notes';
-import { formatDateTime, formatDate } from '@/lib/utils';
+import { formatDateTime, formatDate, formatTime } from '@/lib/utils';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -50,6 +50,18 @@ export function AppointmentDialog({
   const [error, setError] = useState<string | null>(null);
   const [linkedNote, setLinkedNote] = useState<ClinicalNote | null>(null);
   const [loadingNote, setLoadingNote] = useState(false);
+  const [conflicts, setConflicts] = useState<AppointmentConflict[]>([]);
+  const [showConflictWarning, setShowConflictWarning] = useState(false);
+  const [pendingAppointmentData, setPendingAppointmentData] = useState<{
+    patient_id: string;
+    title: string;
+    description: string | null;
+    start_time: string;
+    end_time: string;
+    appointment_type: AppointmentType;
+    notes: string | null;
+    price: number | null;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     patient_id: '',
@@ -68,6 +80,10 @@ export function AppointmentDialog({
       loadPatients();
       setLinkedNote(null);
       setLoadingNote(false);
+      setConflicts([]);
+      setShowConflictWarning(false);
+      setPendingAppointmentData(null);
+      setError(null);
       if (appointment) {
         const startDate = new Date(appointment.start_time);
         const endDate = new Date(appointment.end_time);
@@ -118,9 +134,10 @@ export function AppointmentDialog({
     setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent, forceCreate: boolean = false) => {
     e.preventDefault();
     setError(null);
+    setShowConflictWarning(false);
 
     if (!formData.patient_id) {
       setError('Selecciona un paciente');
@@ -147,21 +164,53 @@ export function AppointmentDialog({
         price: formData.price ? parseFloat(formData.price) : null,
       };
 
-      let result;
-
       if (appointment) {
-        result = await updateAppointment(appointment.id, appointmentData);
+        const result = await updateAppointment(appointment.id, appointmentData);
+        if (!result.success) {
+          setError(result.error || 'Error al guardar la cita');
+          return;
+        }
       } else {
-        result = await createAppointment(appointmentData);
+        const result = await createAppointment(appointmentData, forceCreate);
+
+        // Si hay conflictos, mostrar advertencia
+        if (!result.success && result.conflicts && result.conflicts.length > 0) {
+          setConflicts(result.conflicts);
+          setPendingAppointmentData(appointmentData);
+          setShowConflictWarning(true);
+          return;
+        }
+
+        if (!result.success) {
+          setError(result.error || 'Error al guardar la cita');
+          return;
+        }
       }
+
+      onOpenChange(false);
+    });
+  };
+
+  const handleForceCreate = () => {
+    if (!pendingAppointmentData) return;
+
+    startTransition(async () => {
+      const result = await createAppointment(pendingAppointmentData, true);
 
       if (!result.success) {
         setError(result.error || 'Error al guardar la cita');
+        setShowConflictWarning(false);
         return;
       }
 
       onOpenChange(false);
     });
+  };
+
+  const handleCancelConflict = () => {
+    setShowConflictWarning(false);
+    setConflicts([]);
+    setPendingAppointmentData(null);
   };
 
   const handleCancel = () => {
@@ -356,6 +405,55 @@ export function AppointmentDialog({
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Conflict warning */}
+          {showConflictWarning && conflicts.length > 0 && (
+            <div className="p-3 rounded-md border border-amber-500/50 bg-amber-500/10 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="h-4 w-4" />
+                Conflicto de horarios
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Ya existen citas programadas en este horario:
+              </p>
+              <ul className="space-y-1">
+                {conflicts.map((conflict) => (
+                  <li key={conflict.id} className="text-sm pl-2 border-l-2 border-amber-500/50">
+                    <span className="font-medium">{conflict.patient_name}</span>
+                    {' — '}
+                    {formatTime(conflict.start_time)} a {formatTime(conflict.end_time)}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelConflict}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleForceCreate}
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    'Crear de todas formas'
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 

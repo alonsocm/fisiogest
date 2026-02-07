@@ -7,7 +7,9 @@ import type {
   AppointmentInsert,
   AppointmentUpdate,
   ApiResponse,
-  TodayAppointment
+  TodayAppointment,
+  AppointmentConflict,
+  CreateAppointmentResponse,
 } from '@/types/database.types';
 
 // Contar citas en un rango de fechas
@@ -137,10 +139,62 @@ export async function getPatientAppointments(patientId: string): Promise<Appoint
   return data || [];
 }
 
+// Verificar conflictos de horarios
+export async function checkAppointmentConflicts(
+  startTime: string,
+  endTime: string,
+  excludeAppointmentId?: string
+): Promise<AppointmentConflict[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  let query = supabase
+    .from('appointments')
+    .select(`
+      id,
+      title,
+      start_time,
+      end_time,
+      patient:patients(full_name)
+    `)
+    .eq('therapist_id', user.id)
+    .not('status', 'in', '("cancelled","no_show")')
+    .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
+
+  // Excluir la cita actual si estamos editando
+  if (excludeAppointmentId) {
+    query = query.neq('id', excludeAppointmentId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error checking conflicts:', error);
+    return [];
+  }
+
+  return (data || []).map((apt) => {
+    const patient = apt.patient as unknown as { full_name: string };
+    return {
+      id: apt.id,
+      title: apt.title,
+      patient_name: patient?.full_name || 'Sin paciente',
+      start_time: apt.start_time,
+      end_time: apt.end_time,
+    };
+  });
+}
+
 // Crear nueva cita
 export async function createAppointment(
-  appointmentData: Omit<AppointmentInsert, 'therapist_id'>
-): Promise<ApiResponse<Appointment>> {
+  appointmentData: Omit<AppointmentInsert, 'therapist_id'>,
+  skipConflictCheck: boolean = false
+): Promise<CreateAppointmentResponse> {
   const supabase = await createClient();
 
   const {
@@ -151,20 +205,21 @@ export async function createAppointment(
     return { data: null, error: 'No autenticado', success: false };
   }
 
-  // Verificar que no haya conflicto de horarios
-  const { data: conflicts } = await supabase
-    .from('appointments')
-    .select('id')
-    .eq('therapist_id', user.id)
-    .not('status', 'in', '("cancelled","no_show")')
-    .or(`and(start_time.lt.${appointmentData.end_time},end_time.gt.${appointmentData.start_time})`);
+  // Verificar conflictos de horarios (si no se omite la verificación)
+  if (!skipConflictCheck) {
+    const conflicts = await checkAppointmentConflicts(
+      appointmentData.start_time,
+      appointmentData.end_time
+    );
 
-  if (conflicts && conflicts.length > 0) {
-    return {
-      data: null,
-      error: 'Ya existe una cita en ese horario',
-      success: false
-    };
+    if (conflicts.length > 0) {
+      return {
+        data: null,
+        error: null,
+        success: false,
+        conflicts,
+      };
+    }
   }
 
   const { data, error } = await supabase

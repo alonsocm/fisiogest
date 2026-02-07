@@ -399,3 +399,20 @@ export interface FinancialStats {
   pendingBalance: number;
   patientsWithBalance: number;
 }
+
+// Información de conflicto de citas
+export interface AppointmentConflict {
+  id: string;
+  title: string;
+  patient_name: string;
+  start_time: string;
+  end_time: string;
+}
+
+// Respuesta extendida para creación de citas con posibles conflictos
+export interface CreateAppointmentResponse {
+  data: Appointment | null;
+  error: string | null;
+  success: boolean;
+  conflicts?: AppointmentConflict[];
+}
