@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,6 +52,7 @@ export function AppointmentDialog({
   const [loadingNote, setLoadingNote] = useState(false);
   const [conflicts, setConflicts] = useState<AppointmentConflict[]>([]);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
+  const conflictRef = useRef<HTMLDivElement>(null);
   const [pendingAppointmentData, setPendingAppointmentData] = useState<{
     patient_id: string;
     title: string;
@@ -123,6 +124,12 @@ export function AppointmentDialog({
       }
     }
   }, [open, appointment, defaultDate]);
+
+  useEffect(() => {
+    if (showConflictWarning && conflictRef.current) {
+      conflictRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showConflictWarning]);
 
   const loadPatients = async () => {
     const data = await getActivePatients();
@@ -410,7 +417,7 @@ export function AppointmentDialog({
 
           {/* Conflict warning */}
           {showConflictWarning && conflicts.length > 0 && (
-            <div className="p-3 rounded-md border border-amber-500/50 bg-amber-500/10 space-y-3">
+            <div ref={conflictRef} className="p-3 rounded-md border border-amber-500/50 bg-amber-500/10 space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="h-4 w-4" />
                 Conflicto de horarios
