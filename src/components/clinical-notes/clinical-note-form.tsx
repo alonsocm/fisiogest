@@ -44,7 +44,7 @@ export function ClinicalNoteForm({
 
   const [formData, setFormData] = useState<ClinicalNoteFormData>({
     patient_id: patientId,
-    session_date: existingNote?.session_date || new Date().toISOString().split('T')[0],
+    session_date: existingNote?.session_date || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
     pain_level_before: existingNote?.pain_level_before ?? 5,
     pain_level_after: existingNote?.pain_level_after ?? 0,
     pain_location: existingNote?.pain_location || '',
