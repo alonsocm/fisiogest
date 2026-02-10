@@ -104,7 +104,7 @@ export function PatientPaymentHistory({ patientId }: PatientPaymentHistoryProps)
                   payment.type === 'charge' ? 'text-red-500' : 'text-green-500'
                 }`}
               >
-                {payment.type === 'charge' ? '+' : '-'}
+                {payment.type === 'charge' ? '-' : '+'}
                 {formatCurrency(payment.amount)}
               </span>
             </div>
