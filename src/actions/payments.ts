@@ -197,14 +197,14 @@ export async function getFinancialStats(): Promise<FinancialStats> {
     }
   });
 
-  const patientsWithBalance = Object.values(patientBalances).filter(
-    (b) => b > 0
-  ).length;
+  const positiveBalances = Object.values(patientBalances).filter((b) => b > 0);
+  const patientsWithBalance = positiveBalances.length;
+  const pendingBalance = positiveBalances.reduce((acc, b) => acc + b, 0);
 
   return {
     totalIncome: totalPayments,
     monthlyIncome: monthlyPayments,
-    pendingBalance: totalCharges - totalPayments,
+    pendingBalance,
     patientsWithBalance,
   };
 }
