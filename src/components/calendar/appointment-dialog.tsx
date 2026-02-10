@@ -563,7 +563,7 @@ export function AppointmentDialog({
           )}
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4 border-t mt-4 sticky bottom-0 bg-background">
-            {isEditing && canModify && (
+            {isEditing && canModify && !showCompleteConfirm && (
               <>
                 <Button
                   type="button"
@@ -587,7 +587,7 @@ export function AppointmentDialog({
                 </Button>
               </>
             )}
-            <Button type="submit" disabled={isPending || !canEditPrice} className="flex-1 sm:flex-none">
+            <Button type="submit" disabled={isPending || !canEditPrice} className="flex-1 sm:flex-none" hidden={showCompleteConfirm}>
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
