@@ -240,6 +240,7 @@ export function AppointmentDialog({
   const canModify =
     !appointment ||
     !['completed', 'cancelled', 'no_show'].includes(appointment.status);
+  const canEditPrice = canModify || appointment?.status === 'completed';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -359,7 +360,7 @@ export function AppointmentDialog({
                 value={formData.price}
                 onChange={(e) => handleChange('price', e.target.value)}
                 placeholder="0.00"
-                disabled={!canModify}
+                disabled={!canEditPrice}
               />
             </div>
           </div>
@@ -489,7 +490,7 @@ export function AppointmentDialog({
                 </Button>
               </>
             )}
-            <Button type="submit" disabled={isPending || !canModify} className="flex-1 sm:flex-none">
+            <Button type="submit" disabled={isPending || !canEditPrice} className="flex-1 sm:flex-none">
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
