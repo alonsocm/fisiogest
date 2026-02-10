@@ -252,7 +252,7 @@ export async function updateAppointment(
     .from('appointments')
     .update(appointmentData)
     .eq('id', id)
-    .select()
+    .select('*, patient:patients(full_name)')
     .single();
 
   if (error) {
@@ -260,8 +260,43 @@ export async function updateAppointment(
     return { data: null, error: error.message, success: false };
   }
 
+  // Si la cita está completada y se actualizó el precio, sincronizar el cargo
+  if (data.status === 'completed' && appointmentData.price != null) {
+    const newPrice = appointmentData.price;
+
+    // Buscar cargo existente vinculado a esta cita
+    const { data: existingCharge } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('appointment_id', id)
+      .eq('type', 'charge')
+      .single();
+
+    const patient = data.patient as unknown as { full_name: string };
+    const description = `Sesión - ${patient?.full_name || 'Paciente'}`;
+
+    if (existingCharge && newPrice > 0) {
+      // Actualizar cargo existente
+      await supabase
+        .from('payments')
+        .update({ amount: newPrice, description })
+        .eq('id', existingCharge.id);
+    } else if (existingCharge && newPrice <= 0) {
+      // Eliminar cargo si el precio es 0
+      await supabase
+        .from('payments')
+        .delete()
+        .eq('id', existingCharge.id);
+    } else if (!existingCharge && newPrice > 0) {
+      // Crear nuevo cargo
+      const { createCharge } = await import('./payments');
+      await createCharge(data.patient_id, id, newPrice, description);
+    }
+  }
+
   revalidatePath('/calendar');
   revalidatePath('/dashboard');
+  revalidatePath('/financials');
   return { data, error: null, success: true };
 }
 
