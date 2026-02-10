@@ -10,6 +10,7 @@ import type {
   TodayAppointment,
   AppointmentConflict,
   CreateAppointmentResponse,
+  PaymentMethod,
 } from '@/types/database.types';
 
 // Contar citas en un rango de fechas
@@ -320,7 +321,7 @@ export async function cancelAppointment(id: string): Promise<ApiResponse<null>> 
 }
 
 // Marcar cita como completada
-export async function completeAppointment(id: string): Promise<ApiResponse<null>> {
+export async function completeAppointment(id: string, paymentMethod?: PaymentMethod): Promise<ApiResponse<null>> {
   const supabase = await createClient();
 
   const {
@@ -370,7 +371,7 @@ export async function completeAppointment(id: string): Promise<ApiResponse<null>
 
   // Crear cargo si el precio es mayor a 0
   if (priceToCharge && priceToCharge > 0) {
-    const { createCharge } = await import('./payments');
+    const { createCharge, createPayment } = await import('./payments');
     const patient = appointment.patient as { full_name: string };
     await createCharge(
       appointment.patient_id,
@@ -378,10 +379,21 @@ export async function completeAppointment(id: string): Promise<ApiResponse<null>
       priceToCharge,
       `Sesión - ${patient?.full_name || 'Paciente'}`
     );
+
+    // Si se indicó método de pago, registrar el pago inmediatamente
+    if (paymentMethod) {
+      await createPayment({
+        patient_id: appointment.patient_id,
+        amount: priceToCharge,
+        payment_method: paymentMethod,
+        description: `Pago sesión - ${patient?.full_name || 'Paciente'}`,
+      });
+    }
   }
 
   revalidatePath('/calendar');
   revalidatePath('/dashboard');
+  revalidatePath('/financials');
   revalidatePath(`/patients/${appointment.patient_id}`);
   return { data: null, error: null, success: true };
 }

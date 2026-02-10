@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import Link from 'next/link';
 import { Loader2, Trash2, Check, X, FileText, ExternalLink, AlertTriangle } from 'lucide-react';
-import type { Appointment, AppointmentType, Patient, ClinicalNote, AppointmentConflict } from '@/types/database.types';
+import type { Appointment, AppointmentType, Patient, ClinicalNote, AppointmentConflict, PaymentMethod } from '@/types/database.types';
 import {
   createAppointment,
   updateAppointment,
@@ -52,7 +52,10 @@ export function AppointmentDialog({
   const [loadingNote, setLoadingNote] = useState(false);
   const [conflicts, setConflicts] = useState<AppointmentConflict[]>([]);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod | ''>('');
   const conflictRef = useRef<HTMLDivElement>(null);
+  const completeRef = useRef<HTMLDivElement>(null);
   const [pendingAppointmentData, setPendingAppointmentData] = useState<{
     patient_id: string;
     title: string;
@@ -83,6 +86,8 @@ export function AppointmentDialog({
       setLoadingNote(false);
       setConflicts([]);
       setShowConflictWarning(false);
+      setShowCompleteConfirm(false);
+      setCompletePaymentMethod('');
       setPendingAppointmentData(null);
       setError(null);
       if (appointment) {
@@ -130,6 +135,12 @@ export function AppointmentDialog({
       conflictRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [showConflictWarning]);
+
+  useEffect(() => {
+    if (showCompleteConfirm && completeRef.current) {
+      completeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showCompleteConfirm]);
 
   const loadPatients = async () => {
     const data = await getActivePatients();
@@ -230,8 +241,14 @@ export function AppointmentDialog({
 
   const handleComplete = () => {
     if (!appointment) return;
+    setShowCompleteConfirm(true);
+  };
+
+  const handleConfirmComplete = (withPayment: boolean) => {
+    if (!appointment) return;
     startTransition(async () => {
-      await completeAppointment(appointment.id);
+      const method = withPayment && completePaymentMethod ? completePaymentMethod : undefined;
+      await completeAppointment(appointment.id, method);
       onOpenChange(false);
     });
   };
@@ -413,6 +430,86 @@ export function AppointmentDialog({
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Complete confirmation panel */}
+          {showCompleteConfirm && (
+            <div ref={completeRef} className="p-3 rounded-md border border-border bg-muted/30 space-y-3">
+              <div className="text-sm font-medium">
+                Completar cita
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formData.price && parseFloat(formData.price) > 0
+                  ? `Precio: ${parseFloat(formData.price).toFixed(2)} €`
+                  : 'Sin precio definido'}
+              </div>
+              {formData.price && parseFloat(formData.price) > 0 && (
+                <div className="space-y-2">
+                  <Label>Método de pago</Label>
+                  <Select
+                    value={completePaymentMethod}
+                    onValueChange={(value) => setCompletePaymentMethod(value as PaymentMethod)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona método de pago" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="card">Tarjeta</SelectItem>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                      <SelectItem value="other">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="flex flex-col gap-2 pt-1">
+                {formData.price && parseFloat(formData.price) > 0 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleConfirmComplete(true)}
+                    disabled={isPending || !completePaymentMethod}
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Completando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Completar y registrar pago
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleConfirmComplete(false)}
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Completando...
+                    </>
+                  ) : (
+                    'Completar sin pago'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCompleteConfirm(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+              </div>
             </div>
           )}
 
