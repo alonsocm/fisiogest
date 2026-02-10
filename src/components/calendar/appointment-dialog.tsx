@@ -53,7 +53,7 @@ export function AppointmentDialog({
   const [conflicts, setConflicts] = useState<AppointmentConflict[]>([]);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod | ''>('');
+  const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod | ''>('cash');
   const conflictRef = useRef<HTMLDivElement>(null);
   const completeRef = useRef<HTMLDivElement>(null);
   const [pendingAppointmentData, setPendingAppointmentData] = useState<{
@@ -87,7 +87,7 @@ export function AppointmentDialog({
       setConflicts([]);
       setShowConflictWarning(false);
       setShowCompleteConfirm(false);
-      setCompletePaymentMethod('');
+      setCompletePaymentMethod('cash');
       setPendingAppointmentData(null);
       setError(null);
       if (appointment) {
@@ -441,7 +441,7 @@ export function AppointmentDialog({
               </div>
               <div className="text-sm text-muted-foreground">
                 {formData.price && parseFloat(formData.price) > 0
-                  ? `Precio: ${parseFloat(formData.price).toFixed(2)} €`
+                  ? `Precio: ${parseFloat(formData.price).toFixed(2)} $`
                   : 'Sin precio definido'}
               </div>
               {formData.price && parseFloat(formData.price) > 0 && (
